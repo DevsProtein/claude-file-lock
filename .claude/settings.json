@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/session-start-cleanup.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/scripts/session-start-cleanup.sh\"",
             "timeout": 10
           }
         ]
@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/session-end-cleanup.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/scripts/session-end-cleanup.sh\"",
             "timeout": 10
           }
         ]
@@ -28,19 +28,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/pretooluse-file-lock.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/scripts/pretooluse-file-lock.sh\"",
             "timeout": 10
           }
         ]
       }
     ],
-    "PostToolUse": [
+    "Stop": [
       {
-        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "bash ${CLAUDE_PROJECT_DIR}/.claude/hooks/scripts/posttooluse-file-unlock.sh",
+            "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/hooks/scripts/stop-unlock.sh\"",
             "timeout": 10
           }
         ]

@@ -9,7 +9,7 @@ fi
 
 LOCK_DIR="$CLAUDE_PROJECT_DIR/.claude/cache/file-locks"
 SESSION_DIR="$LOCK_DIR/sessions"
-LOCK_TIMEOUT_SECONDS=3600  # 1時間でタイムアウト
+LOCK_TIMEOUT_SECONDS=1800  # 30分でタイムアウト
 
 get_session_id() {
   if [ -n "$CLAUDE_SESSION_ID" ]; then

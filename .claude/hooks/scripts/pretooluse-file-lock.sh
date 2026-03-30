@@ -52,8 +52,7 @@ if [ $LOCK_STATUS -eq 0 ]; then
   exit 0
 fi
 
-# 競合検知 — ブロック
+# 競合検知 — ブロック（exit 2 でClaude Codeにツール実行を拒否させる）
 CONFLICT_SESSION=$(echo "$LOCK_RESULT" | jq -r '.sessionId // "unknown"')
-BLOCK_MSG="⚠️ $REL_PATH は別のセッション ($CONFLICT_SESSION) が編集中です。"
-ESCAPED=$(echo "$BLOCK_MSG" | jq -Rs '.')
-echo "{\"decision\": \"block\", \"reason\": $ESCAPED}"
+echo "⚠️ $REL_PATH は別のセッション ($CONFLICT_SESSION) が編集中です。Bashツールで「sleep 60」を実行してから、再度このファイルの編集を試みてください。" >&2
+exit 2

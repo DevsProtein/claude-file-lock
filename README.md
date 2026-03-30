@@ -4,10 +4,11 @@ Claude Codeの並列セッションで、同じファイルの同時編集によ
 
 ## 何ができるか
 
-- セッションAがファイルを編集中 → セッションBが同じファイルを編集しようとするとブロック
-- セッション終了時にロックを自動解放
+- セッションAが編集中のファイル → セッションBが編集しようとするとブロック → 1分後に自動で再試行
+- プロンプトの処理が完了したら自動でロック解放（Stop Hook）
+- セッション終了時にも全ロックを自動解放
 - プロセスが異常終了しても、stale検知で自動解放
-- 1時間経過で自動タイムアウト
+- 30分経過で自動タイムアウト
 
 ## 前提条件
 
@@ -19,11 +20,11 @@ Claude Codeの並列セッションで、同じファイルの同時編集によ
 ```
 あなたのプロジェクト/
 └── .claude/
+    ├── settings.json                      ← Hook設定（既存の場合はマージ）
     ├── hooks/
-    │   ├── hooks.json                     ← Hook設定
     │   └── scripts/
     │       ├── pretooluse-file-lock.sh    ← 編集前にロック取得
-    │       ├── posttooluse-file-unlock.sh ← 編集後にロック解放
+    │       ├── stop-unlock.sh             ← プロンプト処理完了時にロック解放
     │       ├── session-start-cleanup.sh   ← セッション開始時に古いロックを掃除
     │       └── session-end-cleanup.sh     ← セッション終了時に全ロック解放
     └── lib/
@@ -45,8 +46,8 @@ git clone https://github.com/DevsProtein/claude-file-lock.git
 # プロジェクトのルートで実行
 mkdir -p .claude/hooks/scripts .claude/lib
 
-# hooks.json をコピー（既存がある場合はマージが必要）
-cp claude-file-lock/.claude/hooks/hooks.json .claude/hooks/hooks.json
+# settings.json をコピー（既存がある場合はhooksセクションをマージ）
+cp claude-file-lock/.claude/settings.json .claude/settings.json
 
 # スクリプトをコピー
 cp claude-file-lock/.claude/lib/file-lock.sh .claude/lib/
@@ -58,30 +59,33 @@ cp claude-file-lock/.claude/hooks/scripts/*.sh .claude/hooks/scripts/
 ```bash
 git clone https://github.com/DevsProtein/claude-file-lock.git /tmp/claude-file-lock && \
   mkdir -p .claude/hooks/scripts .claude/lib && \
-  cp /tmp/claude-file-lock/.claude/hooks/hooks.json .claude/hooks/ && \
+  cp /tmp/claude-file-lock/.claude/settings.json .claude/ && \
   cp /tmp/claude-file-lock/.claude/lib/file-lock.sh .claude/lib/ && \
   cp /tmp/claude-file-lock/.claude/hooks/scripts/*.sh .claude/hooks/scripts/ && \
   rm -rf /tmp/claude-file-lock
 ```
 
-※ 実行権限（`chmod +x`）は不要です。hooks.jsonが `bash <ファイル>` で呼び出すため、読み取り権限があれば動きます。
+※ 実行権限（`chmod +x`）は不要です。settings.jsonが `bash <ファイル>` で呼び出すため、読み取り権限があれば動きます。
 
 ## 仕組み
 
-1. **ファイル編集前（PreToolUse）** → ロックを取得。他セッションが編集中ならブロック
-2. **ファイル編集後（PostToolUse）** → ロックを解放
+1. **ファイル編集前（PreToolUse）** → ロックを取得。他セッションが編集中ならブロックし、1分後に再試行を指示
+2. **プロンプト処理完了時（Stop）** → このセッションの全ロックを解放
 3. **セッション開始時（SessionStart）** → 古いロック（プロセスが死んでいるもの）を掃除
 4. **セッション終了時（SessionEnd）** → このセッションの全ロックを解放
 
+ロックはプロンプトの処理が完了するまで保持されます。Claudeが複数ファイルにまたがる編集を行っている間、他セッションからの割り込みを防ぎます。
+
 ## 安全装置
 
-- セッション終了時に自動でロック解放
+- プロンプト処理完了時に自動でロック解放
+- セッション終了時に全ロック解放
 - プロセスが死んでいたら自動でロック解放（stale検知）
-- 1時間経過で自動解放（タイムアウト）
+- 30分経過で自動解放（タイムアウト）
 
 ## 注意事項
 
-- `hooks.json` が既に存在する場合は、内容をマージしてください
+- `.claude/settings.json` が既に存在する場合は、`hooks` セクションの内容をマージしてください
 - `.claude/cache/file-locks/` にロックファイルが作成されます（`.gitignore` に追加推奨）
 
 ## License
